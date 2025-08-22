@@ -1,80 +1,45 @@
 Arbiter PUF on Nexys A7
-🔑 Introduction
+Introduction
 
-A Physically Unclonable Function (PUF) is a hardware primitive that turns tiny, random manufacturing variations in silicon into a unique digital “fingerprint.” Unlike traditional secret keys that can be stored or copied, a PUF generates secrets on demand, making it attractive for hardware security, authentication, and anti-counterfeiting.
+A Physically Unclonable Function (PUF) is a hardware primitive that leverages small, random manufacturing variations in silicon to create a unique digital “fingerprint.” Unlike stored secret keys that can be extracted or cloned, a PUF generates secrets on demand, making it useful for hardware security, authentication, and anti-counterfeiting.
+This project implements an Arbiter PUF on the Digilent Nexys A7 (Artix-7) FPGA to show how delay-based circuits can generate stable yet unique challenge–response pairs (CRPs), suitable for device identification and key generation.
 
-This project implements an Arbiter PUF on the Digilent Nexys A7 (Artix-7) FPGA. The design demonstrates how delay-based circuits can generate stable yet unique challenge-response pairs (CRPs), suitable for applications such as key generation and device identification.
+Why Use a PUF?
 
-🚀 Why Use a PUF?
+No two chips produce the same responses, even when fabricated from the same design. The circuits require minimal hardware resources compared to secure NVM or cryptographic accelerators, and since keys are generated only when needed, nothing must be permanently stored.
 
-Unclonable: No two chips — even from the same wafer — will produce the same responses.
+Project Overview
 
-Lightweight: Minimal hardware overhead compared to secure NVM or cryptographic accelerators.
+The design targets the Nexys A7-100T FPGA and implements an Arbiter PUF with configurable stages. A UART interface is provided to stream challenge–response pairs to a host PC. Supporting Python scripts collect CRPs and evaluate metrics such as uniqueness, reliability, and uniformity. Internally, the Arbiter PUF consists of a chain of multiplexers. Two signals race through slightly different paths, and an arbiter latch outputs a response bit depending on which path arrives first. Repeating this for many challenges produces a CRP dataset unique to each board.
 
-On-demand: Keys are never permanently stored; they are created when needed.
+Repository Layout
 
-🖥️ Project Overview
+hw/ – top module and constraints
 
-Board: Nexys A7-100T (Artix-7 FPGA)
+rtl/ – Arbiter PUF core and supporting logic (UART, LFSR)
 
-Core RTL: Arbiter PUF with configurable number of stages
+sim/ – testbenches and delay line simulation
 
-Interface: UART for challenge-response collection
+scripts/ – Python scripts for collection and metric analysis
 
-Tooling: Python scripts for data capture + metrics evaluation
+docs/ – example CRP data and results
 
-The Arbiter PUF is built from a chain of multiplexers. Two racing signals travel through slightly different paths, and an arbiter latch decides which one arrived first, producing a single response bit. Repeating this process with many challenges creates a CRP dataset unique to each device.
+Prerequisites
 
-📂 Repository Layout
-hw/         → Top module and XDC constraints
-rtl/        → Arbiter PUF core + support logic (UART, LFSR)
-sim/        → Testbenches and delay line simulation
-scripts/    → Python for CRP collection + metric analysis
-docs/       → (Add results, plots, or board photos here)
+Vivado 2023.2 (or later) and Python 3.8+ with pyserial, numpy, and matplotlib.
 
-⚙️ Prerequisites
+Build and Run
 
-Vivado 2023.2 (or similar version)
+In Vivado, create a project, add the RTL (rtl/*.v) and top module (hw/top.v), apply the constraints (hw/nexys_a7_example.xdc), then run synthesis, implementation, and bitstream generation before programming the Nexys A7 board.
+Once programmed, connect UART at 115200 8N1 and run python3 scripts/collect_uart.py > chipA.csv. Repeat on another board or after power cycling to compare results. Metrics can then be computed using python3 scripts/puf_metrics.py chipA.csv chipB.csv.
 
-Python 3.8+ with pyserial, numpy, matplotlib
+Results
 
-🛠️ Build & Run
-1. Synthesize in Vivado
+The analysis reports uniqueness (differences across chips, ideally ~50%), reliability (stability across runs of the same chip, ideally >95%), and uniformity (balance between 0s and 1s, ideally ~50%). An example run produced:
 
-Create project → add rtl/*.v and hw/top.v.
 
-Apply constraints from hw/nexys_a7_example.xdc.
+Applications
+### Results Visualization
+![PUF Metrics](docs/puf_metrics.png)
 
-Set top.v as top module.
-
-Run synthesis → implementation → bitstream.
-
-Program the Nexys A7 board.
-
-2. Collect Challenge-Response Pairs
-
-Connect UART (115200 8N1) and run: **python3 scripts/collect_uart.py > chipA.csv
-**
-Repeat on another board (or after power cycling) to compare.
-Evaluate Metrics p**ython3 scripts/puf_metrics.py chipA.csv chipB.csv
-**
-Outputs:
-
-Uniqueness – differences across chips (~50% expected)
-
-Reliability – stability across runs (>95% ideal)
-
-Uniformity – balance of 0s/1s (~50% expected)
-Uniqueness (A vs B):   0.493
-Reliability (A):       0.961
-Uniformity (A):        0.502
-
-🔒 Applications
-
-Device authentication
-
-Secure key generation
-
-Anti-counterfeiting tags
-
-Lightweight cryptographic building blocks
+Typical applications include device authentication, secure key generation, counterfeit detection, and other lightweight cryptographic building blocks.
