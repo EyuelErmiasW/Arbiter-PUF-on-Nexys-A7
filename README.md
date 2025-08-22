@@ -26,3 +26,55 @@ Tooling: Python scripts for data capture + metrics evaluation
 The Arbiter PUF is built from a chain of multiplexers. Two racing signals travel through slightly different paths, and an arbiter latch decides which one arrived first, producing a single response bit. Repeating this process with many challenges creates a CRP dataset unique to each device.
 
 📂 Repository Layout
+hw/         → Top module and XDC constraints
+rtl/        → Arbiter PUF core + support logic (UART, LFSR)
+sim/        → Testbenches and delay line simulation
+scripts/    → Python for CRP collection + metric analysis
+docs/       → (Add results, plots, or board photos here)
+
+⚙️ Prerequisites
+
+Vivado 2023.2 (or similar version)
+
+Python 3.8+ with pyserial, numpy, matplotlib
+
+🛠️ Build & Run
+1. Synthesize in Vivado
+
+Create project → add rtl/*.v and hw/top.v.
+
+Apply constraints from hw/nexys_a7_example.xdc.
+
+Set top.v as top module.
+
+Run synthesis → implementation → bitstream.
+
+Program the Nexys A7 board.
+
+2. Collect Challenge-Response Pairs
+
+Connect UART (115200 8N1) and run: **python3 scripts/collect_uart.py > chipA.csv
+**
+Repeat on another board (or after power cycling) to compare.
+Evaluate Metrics p**ython3 scripts/puf_metrics.py chipA.csv chipB.csv
+**
+Outputs:
+
+Uniqueness – differences across chips (~50% expected)
+
+Reliability – stability across runs (>95% ideal)
+
+Uniformity – balance of 0s/1s (~50% expected)
+Uniqueness (A vs B):   0.493
+Reliability (A):       0.961
+Uniformity (A):        0.502
+
+🔒 Applications
+
+Device authentication
+
+Secure key generation
+
+Anti-counterfeiting tags
+
+Lightweight cryptographic building blocks
